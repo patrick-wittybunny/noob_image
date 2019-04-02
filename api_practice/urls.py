@@ -17,4 +17,6 @@ urlpatterns = [
     path('face_average2', api2.face_average2),
     path('face_morph', api2.face_morph),
     path('video_morph', api2.video_morph),
+    path('face_swap', api2.face_swap),
+    path('video_average', api2.video_average),
 ]

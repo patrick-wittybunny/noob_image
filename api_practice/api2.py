@@ -19,93 +19,100 @@ landmarkDetector = dlib.shape_predictor(PREDICTOR_PATH)
 @api_view(['POST'])
 def face_average(request):
   data = utils.parseRequest(request)
+
+  img1 = utils.url_to_image(data['src_img'])
+  img2 = utils.url_to_image(data['dst_img'])
+  p1 = fbc.getLandmarks(faceDetector,landmarkDetector, img1)
+  p2 = fbc.getLandmarks(faceDetector, landmarkDetector, img2)
+  output = image_utils.face_average(img1,img2, p1, p2)
+
   # image_urls = data['image_urls']
-  image_urls = [data['src_img'], data['dst_img']]
-  # image_urls.append(data['src_img'])
-  # image_urls.append(data['src_img'])
+  # image_urls = [data['src_img'], data['dst_img'], "src/baby.jpg"]
+  # # image_urls.append(data['src_img'])
+  # # image_urls.append(data['src_img'])
+  # # print(len(image_urls))
+  # images = []
+  # allPoints = []
 
-  images = []
-  allPoints = []
+  # for url in image_urls:
+  #   try:
+  #     im = utils.url_to_image(url)
+  #     if im is None:
+  #       print("Unable to load image url")
+  #       next
+  #     else:
+  #       utils.image_to_url("results/face_to_average/%d.jpg" % random.randint(0, 10000), im)
+  #       points = fbc.getLandmarks(faceDetector,landmarkDetector, im)
+  #       if(len(points) > 0):
+  #         allPoints.append(points)
+  #         im = np.float32(im)/255.0
+  #         images.append(im)
+  #       else:
+  #         print("No face detected")
+  #   except:
+  #     print("Forbidden image")
+  # if len(images) == 0:
+  #   print("No images loaded")
+  #   return Response("no faces to average")
 
-  for url in image_urls:
-    try:
-      im = utils.url_to_image(url)
-      if im is None:
-        print("Unable to load image url")
-        next
-      else:
-        utils.image_to_url("results/face_to_average/%d.jpg" % random.randint(0, 10000), im)
-        points = fbc.getLandmarks(faceDetector,landmarkDetector, im)
-        if(len(points) > 0):
-          allPoints.append(points)
-          im = np.float32(im)/255.0
-          images.append(im)
-        else:
-          print("No face detected")
-    except:
-      print("Forbidden image")
-  if len(images) == 0:
-    print("No images loaded")
-    return Response("no faces to average")
+  # w = 300
+  # h = 300
 
-  w = 300
-  h = 300
+  # boundaryPts = fbc.getEightBoundaryPoints(w, h)
 
-  boundaryPts = fbc.getEightBoundaryPoints(w, h)
+  # numImages = len(images)
+  # numLandmarks = len(allPoints[0])
 
-  numImages = len(images)
-  numLandmarks = len(allPoints[0])
+  # imagesNorm = []
+  # pointsNorm = []
 
-  imagesNorm = []
-  pointsNorm = []
+  # pointsAvg = np.zeros((numLandmarks, 2), dtype=np.float32)
 
-  pointsAvg = np.zeros((numLandmarks, 2), dtype=np.float32)
+  # # Warp images and trasnform landmarks to output coordinate system,
+  # # and find average of transformed landmarks.
+  # for i, img in enumerate(images):
 
-  # Warp images and trasnform landmarks to output coordinate system,
-  # and find average of transformed landmarks.
-  for i, img in enumerate(images):
+  #   points = allPoints[i]
+  #   points = np.array(points)
 
-    points = allPoints[i]
-    points = np.array(points)
+  #   img, points = fbc.normalizeImagesAndLandmarks((h, w), img, points)
 
-    img, points = fbc.normalizeImagesAndLandmarks((h, w), img, points)
+  #   # Calculate average landmark locations
+  #   pointsAvg = pointsAvg + (points / (1.0*numImages))
 
-    # Calculate average landmark locations
-    pointsAvg = pointsAvg + (points / (1.0*numImages))
+  #   # Append boundary points. Will be used in Delaunay Triangulation
+  #   points = np.concatenate((points, boundaryPts), axis=0)
 
-    # Append boundary points. Will be used in Delaunay Triangulation
-    points = np.concatenate((points, boundaryPts), axis=0)
+  #   pointsNorm.append(points)
+  #   imagesNorm.append(img)
 
-    pointsNorm.append(points)
-    imagesNorm.append(img)
+  # # Append boundary points to average points.
+  # pointsAvg = np.concatenate((pointsAvg, boundaryPts), axis=0)
 
-  # Append boundary points to average points.
-  pointsAvg = np.concatenate((pointsAvg, boundaryPts), axis=0)
+  # # Delaunay triangulation
+  # rect = (0, 0, w, h)
+  # dt = fbc.calculateDelaunayTriangles(rect, pointsAvg)
 
-  # Delaunay triangulation
-  rect = (0, 0, w, h)
-  dt = fbc.calculateDelaunayTriangles(rect, pointsAvg)
+  # # Output image
+  # output = np.zeros((h, w, 3), dtype=np.float)
 
-  # Output image
-  output = np.zeros((h, w, 3), dtype=np.float)
+  # # Warp input images to average image landmarks
+  # for i in range(0, numImages):
 
-  # Warp input images to average image landmarks
-  for i in range(0, numImages):
+  #   imWarp = fbc.warpImage(
+  #     imagesNorm[i], pointsNorm[i], pointsAvg.tolist(), dt)
 
-    imWarp = fbc.warpImage(
-      imagesNorm[i], pointsNorm[i], pointsAvg.tolist(), dt)
+  #   # Add image intensities for averaging
+  #   output = output + imWarp
 
-    # Add image intensities for averaging
-    output = output + imWarp
+  # # Divide by numImages to get average
+  # output = output / (1.0*numImages)
+  # output = output * 255.0
+  # output = np.uint8(output)
+  # print(output)
 
-  # Divide by numImages to get average
-  output = output / (1.0*numImages)
-  output = output * 255.0
-  output = np.uint8(output)
-  print(output)
   url = utils.image_to_url("results/face_to_average/face_average.jpg", output)
   return Response({"image_url": url})
-
 
 def face_average2(request):
   data = utils.parseRequest(request)
@@ -332,4 +339,171 @@ def video_morph(request):
   # video_utils.video_write("results/face_morph/face_average.mp4", 8, (300, 300), frames)
   url = utils.video_to_url(path)
   # return Response("")
+  return Response({"video_url": url})
+
+
+@api_view(['POST'])
+def face_swap(request):
+  data = utils.parseRequest(request)
+  # dst_url = data['dst_img']
+  # src_url = data['src_img']
+
+  # Read images
+  filename1 = 'src/ted_cruz.jpg'
+  filename2 = 'src/donald_trump.jpg'
+
+  img1 = cv2.imread(filename1)
+  img2 = cv2.imread(filename2)
+  img1Warped = np.copy(img2)
+
+  # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+  img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
+
+  faceRects = faceDetector(img2, 0)
+
+
+  frames = []
+  frames.append(img2)
+  for n in range(0, len(faceRects)):
+    # Read array of corresponding points
+    points1 = fbc.getLandmarks(
+        faceDetector, landmarkDetector, cv2.cvtColor(img1, cv2.COLOR_BGR2RGB))
+    newRect = dlib.rectangle(int(faceRects[n].left()), int(faceRects[n].top()),
+                             int(faceRects[n].right()), int(faceRects[n].bottom()))
+
+    points2 = fbc.dlibLandmarksToPoints(landmarkDetector(img2, newRect))
+
+    # Find convex hull
+    hull1 = []
+    hull2 = []
+
+    hullIndex = cv2.convexHull(np.array(points2), returnPoints=False)
+
+    for i in range(0, len(hullIndex)):
+      hull1.append(points1[hullIndex[i][0]])
+      hull2.append(points2[hullIndex[i][0]])
+
+    # Find delanauy traingulation for convex hull points
+    sizeImg2 = img2.shape
+    rect = (0, 0, sizeImg2[1], sizeImg2[0])
+
+    dt = fbc.calculateDelaunayTriangles(rect, hull2)
+
+    if len(dt) == 0:
+      quit()
+
+    # Apply affine transformation to Delaunay triangles
+    for i in range(0, len(dt)):
+      t1 = []
+      t2 = []
+
+      #get points for img1, img2 corresponding to the triangles
+      for j in range(0, 3):
+        t1.append(hull1[dt[i][j]])
+        t2.append(hull2[dt[i][j]])
+
+      fbc.warpTriangle(img1, img1Warped, t1, t2)
+
+    # Calculate Mask for Seamless cloning
+    hull8U = []
+    for i in range(0, len(hull2)):
+      hull8U.append((hull2[i][0], hull2[i][1]))
+
+    mask = np.zeros(img2.shape, dtype=img2.dtype)
+
+    cv2.fillConvexPoly(mask, np.int32(hull8U), (255, 255, 255))
+    # find center of the mask to be cloned with the destination image
+    r = cv2.boundingRect(np.float32([hull2]))
+
+    center = ((r[0]+int(r[2]/2), r[1]+int(r[3]/2)))
+
+    # img2 = cv2.cvtColor(img2, cv2.COLOR_RGB2GRAY)
+
+    # Clone seamlessly.
+    img2 = cv2.seamlessClone(
+        np.uint8(img1Warped), img2, mask, center, cv2.NORMAL_CLONE)
+
+    cv2.imwrite("results/face_swap/faceswap_%d.jpg" % n, img2)
+
+    # output = cv2.imread("results/face_swap/faceswap_%d.jpg" % n)
+    # output = np.uint8(output)
+    # frames.append(output)
+
+  for n in range(0, len(faceRects)):  
+    frames.append(cv2.imread("results/face_swap/faceswap_%d.jpg" % n))
+    frames.append(cv2.imread("results/face_swap/faceswap_%d.jpg" % n))
+
+
+  path = "results/face_swap/face_swap.avi"
+  video_utils.video_write(path, 1, (1080, 1080), frames)
+
+  return Response('')
+
+
+@api_view(['POST'])
+def video_average(request):
+  data = utils.parseRequest(request)
+  src_url = data['src_img']
+  dst_url = data['dst_img']
+
+  img1 = utils.url_to_image(src_url)
+  img2 = utils.url_to_image(dst_url)
+  img1Warped = np.copy(img2)
+
+  img2cop = np.copy(img2)
+  vh, vw, vc = img2cop.shape
+  x_scale = 300/vh
+  y_scale = 300/vw
+  img2cop = cv2.resize(img2cop, (0, 0), fx=x_scale, fy=y_scale)
+  frames = []
+  frames.append(img2cop)
+  frames.append(img2cop)
+
+  img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
+  img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
+
+  faceRects = faceDetector(img2, 0)
+  # print(faceRects)
+  points1 = fbc.getLandmarks(faceDetector, landmarkDetector, img1)
+  averages = []
+  for n in range(0, len(faceRects)):
+    newRect = dlib.rectangle(int(faceRects[n].left()), int(faceRects[n].top()),
+                             int(faceRects[n].right()), int(faceRects[n].bottom()))
+    points2 = fbc.dlibLandmarksToPoints(landmarkDetector(img2, newRect))
+
+
+    average = image_utils.face_average(img1, img2, points1, points2)
+    averages.append(average)
+
+    cv2.imwrite('results/face_swap/average_faces/face_average_%d.jpg' % n, average)
+
+  for k in range(0, len(faceRects)):
+    average = averages[k]
+    p1 = fbc.getLandmarks(faceDetector, landmarkDetector, average)
+    newRect = dlib.rectangle(int(faceRects[k].left()), int(faceRects[k].top()),
+                             int(faceRects[k].right()), int(faceRects[k].bottom()))
+    p2 = fbc.dlibLandmarksToPoints(landmarkDetector(img2, newRect))
+    frame = image_utils.face_swap(average, img2, p1, p2)
+
+    # frames.append(frame)
+    # frames.append(frame)
+    vid_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    vh, vw, vc = vid_frame.shape
+    x_scale = 300/vh
+    y_scale = 300/vw
+
+    vid_frame = cv2.resize(vid_frame, (0,0), fx = x_scale, fy = y_scale)
+    frames.append(vid_frame)
+    frames.append(vid_frame)
+
+    img2 = frame
+
+    cv2.imwrite('results/face_swap/frames/frame_%d.jpg' % k, vid_frame)
+
+  path = 'results/face_swap/face_swap.avi'
+  h, w, c = img2.shape
+  video_utils.video_write(path, 2, (300, 300), frames)
+
+  # video_utils.video_write(path, 2, (w, h), frames)
+  url = utils.video_to_url(path)
   return Response({"video_url": url})

@@ -52,18 +52,7 @@ def myFunction(request):
 
 P.S.
 1. Please use cloudinary sparingly as it is only for free and has maximum storage memory limit.
-In utils.py, comment out uploading and removal of local file
+In api_practice/.env, change environment to 'local' when developing in local then change to 'prod' when you want to submit/commit/deploy to enable url upload again
 ```python
-def image_to_url(path, image):
-  cv2.imwrite(path, image)
-  #a = cloudinary.uploader.upload(path)
-  #os.remove(path)
-  #return a['url']
-  return ""
-  
-def video_to_url(path):
-  #a = cloudinary.uploader.upload(path, resource_type = "video")
-  #os.remove(path)
-  #return a['url']
-  return ""
+ENVIRONMENT = 'local'
 ```
